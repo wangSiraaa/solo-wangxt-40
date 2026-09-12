@@ -1,0 +1,17 @@
+{
+  "name": "royalty-splitter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "独立音乐平台收入按作品与归属期合同份额分账（React + NestJS + PostgreSQL + decimal.js）",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "db:start": "npm --prefix backend run db:start",
+    "db:stop": "npm --prefix backend run db:stop",
+    "seed": "npm --prefix backend run seed",
+    "demo": "npm --prefix backend run demo",
+    "e2e": "npm --prefix backend run e2e",
+    "api": "npm --prefix backend run start:dev",
+    "web": "npm --prefix frontend run dev",
+    "dev:all": "node scripts/dev-all.mjs"
+  }
+}

@@ -1,0 +1,9 @@
+platform,platform_line_id,isrc,track_title,currency,gross,period_start,period_end
+Spotify,SPF-001,CNM012500001,夜航 Night Crossing,USD,120.50,2025-01-01,2025-06-30
+Spotify,SPF-002,CNM012500002,回声峡谷 Echo Canyon,USD,88.00,2025-01-01,2025-06-30
+Spotify,SPF-003,CNM012500001,夜航 Night Crossing,USD,10.00,2025-07-01,2025-07-31
+Spotify,SPF-004,CNM012500002,回声峡谷 Echo Canyon,USD,5.25,2025-07-01,2025-07-31
+Spotify,SPF-005,CNM012500002,回声峡谷 Echo Canyon,EUR,-12.50,2025-02-01,2025-02-28
+Spotify,SPF-006,CNM012500001,夜航 Night Crossing,JPY,12000,2025-03-01,2025-03-31
+Spotify,SPF-007,CNM012599999,潮汐 Tides,USD,33.00,2025-03-01,2025-03-31
+Spotify,SPF-001,CNM012500001,夜航 Night Crossing,USD,120.50,2025-01-01,2025-06-30

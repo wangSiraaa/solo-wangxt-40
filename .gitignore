@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.pgdata/
+*.log
+.DS_Store
+
+# Local secrets and machine-specific connection settings
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*credentials*
+*secret*
+*secrets*
+*token*
+*.tsbuildinfo
