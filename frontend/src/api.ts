@@ -167,9 +167,12 @@ export const api = {
     req('/api/catalog/pending/reprocess', { method: 'POST' }),
   imports: () => req<BillImport[]>('/api/imports'),
   rows: (status?: string) =>
-    req<{ count: number; totalConvertedCny: string; rows: StatementRow[] }>(
-      `/api/imports/rows${status ? `?status=${status}` : ''}`,
-    ),
+    req<{
+      count: number;
+      totalConvertedCny: string;
+      totalConvertedCnyCents: string;
+      rows: StatementRow[];
+    }>(`/api/imports/rows${status ? `?status=${status}` : ''}`),
   availableRows: () => req<StatementRow[]>('/api/splits/available-rows'),
   precompute: (label: string, rowIds?: string[]) =>
     req('/api/splits/batches', {
@@ -197,15 +200,50 @@ export const api = {
   },
 };
 
-/** CNY 分 -> 元 */
-export function yuan(cents: string | number | null | undefined): string {
+/**
+ * CNY 分（整数）-> 元。只接受整数分：bigint / number（必须为安全整数）/
+ * 整数字符串。传入 "2816.48" 这类小数元会直接抛错，避免 BigInt 隐式截断导致
+ * 白屏（小数元请改用 yuanFromMajor）。
+ */
+export function yuan(cents: string | number | bigint | null | undefined): string {
   if (cents === null || cents === undefined) return '—';
-  const n = BigInt(cents as string);
+  const n = toCentsBigInt(cents);
   const neg = n < 0n;
   const abs = neg ? -n : n;
   const y = abs / 100n;
   const c = abs % 100n;
   return `${neg ? '-' : ''}¥${y}.${c.toString().padStart(2, '0')}`;
+}
+
+/** 把整数分安全解析为 bigint，拒绝小数元/NaN/非有限数/非安全整数 */
+function toCentsBigInt(cents: string | number | bigint): bigint {
+  if (typeof cents === 'bigint') return cents;
+  if (typeof cents === 'number') {
+    if (!Number.isFinite(cents) || !Number.isSafeInteger(cents)) {
+      throw new Error(
+        `yuan() 仅接受整数分，收到非安全整数 number: ${cents}（若是小数元请用 yuanFromMajor）`,
+      );
+    }
+    return BigInt(cents);
+  }
+  const s = cents.trim();
+  if (!/^[+-]?\d+$/.test(s)) {
+    throw new Error(
+      `yuan() 仅接受整数分字符串，收到 "${cents}"（小数元请用 yuanFromMajor）`,
+    );
+  }
+  return BigInt(s);
+}
+
+/**
+ * 小数元（如后端返回的 "2011.52"）-> 格式化元。内部先四舍五入到整数分，
+ * 再走 yuan()，保证不会把小数直接送进 BigInt。
+ */
+export function yuanFromMajor(major: string | number | null | undefined): string {
+  if (major === null || major === undefined || major === '') return '—';
+  const n = typeof major === 'number' ? major : Number(major);
+  if (!Number.isFinite(n)) return '—';
+  return yuan(Math.round(n * 100));
 }
 
 export const STATUS_LABEL: Record<string, string> = {

@@ -81,6 +81,27 @@ async function main() {
   check('负向冲销 EUR -12.50 换算为 -9750 分', negRow && negRow.cnyCents === '-9750', negRow?.cnyCents);
   check('JPY 缺汇率行不是就绪行', availBefore.find((r) => r.platformLineId === 'SPF-006')?.status === 'pending_rate');
 
+  console.log('4b) 0 / 负 / 非法汇率必须拒绝（回归：isPositive() 对 0 返回 true）');
+  for (const bad of ['0', '-0.01', 'abc', '']) {
+    const rr = await api('/api/catalog/rates', {
+      method: 'POST',
+      body: JSON.stringify({ currency: 'JPY', effectiveFrom: '2024-01-01', effectiveTo: null, rateToCny: bad }),
+    });
+    check(`rateToCny=${JSON.stringify(bad)} 返回 4xx`, rr.status >= 400 && rr.status < 500, `got ${rr.status}`);
+  }
+  const pendingAfterZero = (await api('/api/catalog/pending')).body as any[];
+  const spf6 = pendingAfterZero.find((r) => r.platformLineId === 'SPF-006');
+  check('被拒后 SPF-006 仍为 pending_rate 且金额为空', !!spf6 && spf6.cnyCents === null);
+  const okRate = await api('/api/catalog/rates', {
+    method: 'POST',
+    body: JSON.stringify({ currency: 'JPY', effectiveFrom: '2024-01-01', effectiveTo: null, rateToCny: '0.0475' }),
+  });
+  check('JPY=0.0475 接受', okRate.status < 300);
+  await new Promise((r) => setTimeout(r, 300)); // reprocessPending 在同事务后异步可见
+  const rowsAgain = (await api('/api/imports/rows')).body;
+  const spf6b = rowsAgain.rows.find((r: any) => r.platformLineId === 'SPF-006');
+  check('补入正确汇率后 SPF-006 ready 且为 57000 分', spf6b.status === 'ready' && spf6b.cnyCents === '57000', JSON.stringify(spf6b && [spf6b.status, spf6b.cnyCents]));
+
   console.log('6) 批次守恒（自建试算批次）');
   let r0 = await api('/api/splits/batches', {
     method: 'POST',

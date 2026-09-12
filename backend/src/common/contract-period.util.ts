@@ -136,5 +136,7 @@ export function rateForDate(
       utcDay(r.effectiveFrom) <= day &&
       (r.effectiveTo === null || utcDay(r.effectiveTo) >= day),
   );
-  return hit ? hit.rateToCny : null;
+  // 防御性：0 / 负汇率等于「没有可用汇率」，不得参与换算
+  if (!hit || !D(hit.rateToCny).greaterThan(0)) return null;
+  return hit.rateToCny;
 }

@@ -149,8 +149,26 @@ export class CatalogService {
     const currency = input.currency?.trim().toUpperCase();
     if (!currency || currency === 'CNY')
       throw new BadRequestException('外币代码必填且不能为 CNY（本币恒为 1）');
-    const rate = D(input.rateToCny);
-    if (!rate.isPositive()) throw new BadRequestException('汇率必须为正数');
+
+    // 显式校验：空值/无法解析/NaN/Infinity 一律拒绝，避免 D() 抛 500
+    const raw = String(input.rateToCny ?? '').trim();
+    let rate: ReturnType<typeof D>;
+    if (!raw) throw new BadRequestException('汇率必填');
+    try {
+      rate = D(raw);
+    } catch {
+      throw new BadRequestException(`汇率无法解析: ${raw}`);
+    }
+    if (!rate.isFinite()) {
+      throw new BadRequestException('汇率必须是有限数值');
+    }
+    // 不能只依赖 isPositive()：decimal.js 在 ROUND_HALF_UP 配置下对 0 也返回 true。
+    // 显式拒绝 0 与一切非正值——0 汇率会把收入静默换算成 0 分，属于核算事故。
+    if (rate.lessThanOrEqualTo(0)) {
+      throw new BadRequestException(
+        `汇率必须严格大于 0（收到 ${raw}）；0 或负汇率不得用于换算`,
+      );
+    }
 
     const saved = await this.rateRepo.save(
       this.rateRepo.create({

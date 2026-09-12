@@ -5,7 +5,8 @@ import { useAction, useToast } from '../toast';
 export default function BillsPage() {
   const [imports, setImports] = useState<BillImport[]>([]);
   const [rows, setRows] = useState<StatementRow[]>([]);
-  const [total, setTotal] = useState('0');
+  // 合计始终以整数分（totalConvertedCnyCents）保存；yuan() 不接受小数元
+  const [totalCents, setTotalCents] = useState('0');
   const [filter, setFilter] = useState('');
   const toast = useToast();
   const act = useAction();
@@ -14,7 +15,7 @@ export default function BillsPage() {
     setImports(await api.imports());
     const r = await api.rows(filter || undefined);
     setRows(r.rows);
-    setTotal(r.totalConvertedCny);
+    setTotalCents(r.totalConvertedCnyCents);
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [filter]);
 
@@ -73,7 +74,7 @@ export default function BillsPage() {
 
       <div className="stat">
         <div className="box"><div className="k">行数</div><div className="v">{rows.length}</div></div>
-        <div className="box"><div className="k">已换算金额合计（仅已就绪行，CNY）</div><div className="v">{yuan(total)}</div></div>
+        <div className="box"><div className="k">已换算金额合计（仅已就绪行，CNY）</div><div className="v">{yuan(totalCents)}</div></div>
       </div>
 
       <div className="panel">
